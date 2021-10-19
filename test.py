@@ -8,12 +8,12 @@ from skimage.measure import regionprops
 n = 12
 l = 256
 
-np.random.seed(1)
-img = cv2.imread('assets/train/d0813ddce0c72c0fb0c33257903d518d_1.tif') 
+# np.random.seed(1)
+img = cv2.imread("assets/train/0d178d095434170eac2cb58cc244bb8c_2.tif") 
 plt.imshow(img)
 plt.show()
 
-# kernel = np.ones((5, 5), np.uint8)
+kernel = np.ones((3, 3), np.uint8)
 # img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 # plt.imshow(img)
 # plt.show()
@@ -21,13 +21,15 @@ plt.show()
 # img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 # plt.imshow(img)
 # plt.show()
-
 img = cv2.threshold(img,127,255,cv2.THRESH_BINARY)[1]
 
-# plt.imshow(img)
-# plt.show()
+# kernel = np.ones((6,6),np.uint8)
+# img = cv2.erode(img,kernel,iterations = 1)
+plt.imshow(img)
+plt.show()
 
-# img = np.invert(img)
+
+
 
 # plt.imshow(img)
 # plt.show()
@@ -123,16 +125,16 @@ print(pre_version.shape)
 # plt.show()
 
 region_array = []
+pixel_range = 50
 for region in regionprops(pre_version):
     if len(region_array) == 0:
         region_array.append(region.bbox)
-    elif abs(region_array[len(region_array) - 1][0] - region.bbox[0]) <= 20 or abs(region_array[len(region_array) - 1][4] - region.bbox[4]) <= 20:
+    elif abs(region_array[len(region_array) - 1][0] - region.bbox[0]) <= pixel_range or abs(region_array[len(region_array) - 1][3] - region.bbox[3]) <= pixel_range:
         previous_region = region_array[len(region_array) - 1]
         region_array[len(region_array) - 1] = (min(previous_region[0], region.bbox[0]),
                                                min(previous_region[1], region.bbox[1]), region.bbox[2],
                                                max(previous_region[3], region.bbox[3]),
                                                max(previous_region[4], region.bbox[4]), region.bbox[5])
-        # region_array[len(region_array) - 1] = region.bbox
     else:
         region_array.append(region.bbox)
 
