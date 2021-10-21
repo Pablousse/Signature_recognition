@@ -93,18 +93,19 @@ def show_intersecting_boxes(filename):
 
                 i += 1
             else:
+                cv2.rectangle(image, (x, y), (x + w, y + h), (200, 200, 200 ), 3)
                 bboxes[i] = [[x, y, w, h], False]
 
         x = int(xml_cnt[0])
         y = int(xml_cnt[1])
         w = int(xml_cnt[2])
         h = int(xml_cnt[3])
-        cv2.rectangle(image, (x, y), (x + w, y + h), (255,36,12), 3)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (255, 36, 12), 3)
 
-    # plt.imshow(image)
-    # mng = plt.get_current_fig_manager()
-    # mng.resize(*mng.window.maxsize())
-    # plt.show()
+    plt.imshow(image)
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+    plt.show()
     print(filename)
 
     return bbox_flag, bboxes
@@ -113,7 +114,7 @@ def show_intersecting_boxes(filename):
 def crop_box_and_save(bbox, bbox_number, is_good, filename):
     x, y, w, h = bbox
     image = cv2.imread(os.path.join("assets/train", filename))
-    crop = image[y:y+h, x:x+w]
+    crop = image[y: y + h, x: x + w]
     if is_good:
         directory = "assets/Cropped_image/good"
     else:
@@ -125,13 +126,13 @@ def crop_box_and_save(bbox, bbox_number, is_good, filename):
 # show_intersecting_boxes("be8e523c9617ee2cc72b3ce61e3106e0_2.tif")
 result = []
 for filename in os.listdir("assets/train"):
-    is_correct, bboxes = show_intersecting_boxes(filename)
-    result.append(is_correct)
-    bboxes
+     is_correct, bboxes = show_intersecting_boxes(filename)
+#     result.append(is_correct)
+#     bboxes
 
-    for key, value in bboxes.items():
-        crop_box_and_save(value[0], key, value[1], filename)
+#     for key, value in bboxes.items():
+#         crop_box_and_save(value[0], key, value[1], filename)
 
-print("len is " + str(len(result)))
-print("sum is " + str(sum(result)))
-print("Wrong detection box is " + str(int(len(result) - sum(result))))
+# print("len is " + str(len(result)))
+# print("sum is " + str(sum(result)))
+# print("Wrong detection box is " + str(int(len(result) - sum(result))))
