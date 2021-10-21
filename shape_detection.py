@@ -2,6 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 from bs4 import BeautifulSoup
+from PIL import Image
 
 
 def show_bounding_boxes(path):
@@ -38,7 +39,7 @@ def show_bounding_boxes(path):
 
 def get_bounding_box_from_xml(path):
     f = open(path)
-    soup = BeautifulSoup(f)
+    soup = BeautifulSoup(f, "lxml")
     signatures = soup.select("DL_ZONE[gedi_type='DLSignature']")
     bounding_box_array = []
     for signature in signatures:
@@ -53,6 +54,7 @@ def intersection_check(rect_one, rect_two):
     if int(rect_one[1]) > (int(rect_two[1]) + int(rect_two[3])) or (int(rect_one[1]) + int(rect_one[3])) < int(rect_two[1]):
         return False
     return True
+
 
 def show_intersecting_boxes(filename):
 
@@ -69,20 +71,29 @@ def show_intersecting_boxes(filename):
     else:
         bbox_flag = False
 
+    bboxes = {}
+    i = 0
+
     image = cv2.imread(test_path)
     for xml_cnt in xml_cnts:
         xml_area = int(xml_cnt[2]) * int(xml_cnt[3])
         for cnt in cnts:
+            x = cv2.boundingRect(cnt)[0]
+            y = cv2.boundingRect(cnt)[1]
+            w = cv2.boundingRect(cnt)[2]
+            h = cv2.boundingRect(cnt)[3]
             if intersection_check(xml_cnt, cv2.boundingRect(cnt)):
-                x = cv2.boundingRect(cnt)[0]
-                y = cv2.boundingRect(cnt)[1]
-                w = cv2.boundingRect(cnt)[2]
-                h = cv2.boundingRect(cnt)[3]
                 if (w * h) > (20 * xml_area):
-                    cv2.rectangle(image, (x, y), (x + w, y + h), (36,12,255), 3)
+                    cv2.rectangle(image, (x, y), (x + w, y + h), (36, 12, 255), 3)
+                    bboxes[i] = [[x, y, w, h], False]
                 else:
                     bbox_flag = True
-                    cv2.rectangle(image, (x, y), (x + w, y + h), (36,255,12), 3)
+                    cv2.rectangle(image, (x, y), (x + w, y + h), (36, 255, 12), 3)
+                    bboxes[i] = [[x, y, w, h], True]
+
+                i += 1
+            else:
+                bboxes[i] = [[x, y, w, h], False]
 
         x = int(xml_cnt[0])
         y = int(xml_cnt[1])
@@ -90,26 +101,37 @@ def show_intersecting_boxes(filename):
         h = int(xml_cnt[3])
         cv2.rectangle(image, (x, y), (x + w, y + h), (255,36,12), 3)
 
-
-    plt.imshow(image)
-    mng = plt.get_current_fig_manager()
-    mng.resize(*mng.window.maxsize())
-    plt.show()
+    # plt.imshow(image)
+    # mng = plt.get_current_fig_manager()
+    # mng.resize(*mng.window.maxsize())
+    # plt.show()
     print(filename)
 
-    return bbox_flag
+    return bbox_flag, bboxes
 
 
+def crop_box_and_save(bbox, bbox_number, is_good, filename):
+    x, y, w, h = bbox
+    image = cv2.imread(os.path.join("assets/train", filename))
+    crop = image[y:y+h, x:x+w]
+    if is_good:
+        directory = "assets/Cropped_image/good"
+    else:
+        directory = "assets/Cropped_image/bad"
+    cropped_image_path = os.path.join(directory, os.path.splitext(filename)[0] + "_" + str(bbox_number) + ".tif")
+    cv2.imwrite(cropped_image_path, crop)
+
+
+# show_intersecting_boxes("be8e523c9617ee2cc72b3ce61e3106e0_2.tif")
 result = []
 for filename in os.listdir("assets/train"):
-    result.append(show_intersecting_boxes(filename))
+    is_correct, bboxes = show_intersecting_boxes(filename)
+    result.append(is_correct)
+    bboxes
+
+    for key, value in bboxes.items():
+        crop_box_and_save(value[0], key, value[1], filename)
 
 print("len is " + str(len(result)))
 print("sum is " + str(sum(result)))
-print("Wrong detection box is " + str(int(len(result)-sum(result))))
-
-# train_directory = "assets/train"
-# xml_directory = "assets/train_xml"
-
-#     show_bounding_boxes(os.path.join(train_directory, filename))
-#     print(os.path.join(xml_directory, (os.path.splitext(filename)[0] + ".xml")))
+print("Wrong detection box is " + str(int(len(result) - sum(result))))
